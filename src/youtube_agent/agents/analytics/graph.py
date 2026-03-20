@@ -36,8 +36,13 @@ def create_analytics_graph(llm: BaseChatModel, config: AppConfig) -> StateGraph:
             save_text(out / "strategy.md", report)
         return {}
 
+    def _route_after_strategy(state: AnalyticsState):
+        if state.get("strategy") is None:
+            return END
+        return "save_report"
+
     builder.add_node("save_report", _save_report)
-    builder.add_edge("approve_strategy", "save_report")
+    builder.add_conditional_edges("approve_strategy", _route_after_strategy, ["save_report", END])
     builder.add_edge("save_report", END)
 
     return builder

@@ -67,8 +67,8 @@ def _handle_interrupt(interrupt_data: dict) -> dict:
         strategy = interrupt_data["strategy"]
         for key, value in strategy.items():
             console.print(f"\n[bold]{key}:[/bold] {value}")
-        prompt_approval(action)
-        return {}
+        choice = prompt_approval(action)
+        return {"approved": choice.lower() in ("s", "sim", "y", "yes")}
 
     choice = prompt_approval(action)
     return {"approved": choice.lower() in ("s", "sim", "y", "yes")}

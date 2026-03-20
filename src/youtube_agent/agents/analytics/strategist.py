@@ -52,7 +52,9 @@ def _generate_strategy(state: AnalyticsState, llm: BaseChatModel) -> dict:
 
 
 def _approve_strategy(state: AnalyticsState) -> dict:
-    interrupt({"strategy": state["strategy"], "action": "Estratégia gerada. Revisar? [s/n]"})
+    decision = interrupt({"strategy": state["strategy"], "action": "Aprovar estratégia? [s/n]"})
+    if not decision.get("approved", False):
+        return {"strategy": None}
     return {}
 
 
