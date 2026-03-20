@@ -91,7 +91,7 @@ class IdeationState(TypedDict):
     competitor_insights: list[CompetitorVideo]
     suggested_topics: list[TopicSuggestion]
     selected_topic: TopicSuggestion | None
-    search_hints: list[str]
+    prompt: str
 
 
 class ProductionState(TypedDict):
@@ -113,4 +113,4 @@ class OrchestratorState(TypedDict):
     selected_topic: TopicSuggestion | None
     topic: TopicSuggestion | None
     mode: str
-    search_hints: list[str]
+    prompt: str

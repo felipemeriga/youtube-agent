@@ -112,20 +112,31 @@ def cli(ctx, config_path, verbose):
 
 
 @cli.command()
-@click.option("--hint", "-h", multiple=True, help="Search hints/topics to explore (repeatable)")
+@click.argument("prompt", default="")
 @click.pass_context
-def ideate(ctx, hint):
-    """Run content ideation pipeline."""
+def ideate(ctx, prompt):
+    """Run content ideation pipeline.
+
+    Optionally pass a PROMPT describing what you want, e.g.:
+
+        youtube-agent ideate "gostaria de fazer um vídeo sobre a guerra do irã e IA"
+    """
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
     db_url = _get_db_url()
+
+    if not prompt:
+        prompt = console.input(
+            "[bold yellow]? Sobre o que gostaria de fazer vídeos? "
+            "(Enter para explorar tendências)[/bold yellow] "
+        )
 
     with PostgresSaver.from_conn_string(db_url) as checkpointer:
         checkpointer.setup()
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Ideação de Conteúdo", thread_id)
         thread_config = {"configurable": {"thread_id": thread_id}}
-        input_state = {"mode": "ideate", "search_hints": list(hint)}
+        input_state = {"mode": "ideate", "prompt": prompt}
         _stream_graph(graph, input_state, thread_config)
         _run_interrupt_loop(graph, thread_config)
 
@@ -200,20 +211,31 @@ def analyze(ctx):
 
 
 @cli.command()
-@click.option("--hint", "-h", multiple=True, help="Search hints/topics to explore (repeatable)")
+@click.argument("prompt", default="")
 @click.pass_context
-def full(ctx, hint):
-    """Run full pipeline: ideation then production then analytics."""
+def full(ctx, prompt):
+    """Run full pipeline: ideation then production then analytics.
+
+    Optionally pass a PROMPT describing what you want, e.g.:
+
+        youtube-agent full "quero explorar temas de geopolítica e economia"
+    """
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
     db_url = _get_db_url()
+
+    if not prompt:
+        prompt = console.input(
+            "[bold yellow]? Sobre o que gostaria de fazer vídeos? "
+            "(Enter para explorar tendências)[/bold yellow] "
+        )
 
     with PostgresSaver.from_conn_string(db_url) as checkpointer:
         checkpointer.setup()
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Pipeline Completo", thread_id)
         thread_config = {"configurable": {"thread_id": thread_id}}
-        input_state = {"mode": "full", "search_hints": list(hint)}
+        input_state = {"mode": "full", "prompt": prompt}
         _stream_graph(graph, input_state, thread_config)
         _run_interrupt_loop(graph, thread_config)
 

@@ -58,11 +58,13 @@ def _generate_topics(state: IdeationState, llm: BaseChatModel) -> dict:
         for c in state.get("competitor_insights", [])[:15]
     )
 
-    search_hints = state.get("search_hints") or []
-    if search_hints:
+    user_prompt = state.get("prompt") or ""
+    if user_prompt:
         hints_section = (
-            "O criador do canal pediu para considerar especialmente estes temas/ideias:\n"
-            + "\n".join(f"- {h}" for h in search_hints)
+            "O criador do canal pediu especificamente:\n"
+            f'"{user_prompt}"\n\n'
+            "Priorize sugestões de tópicos alinhadas com este pedido, "
+            "mas sempre baseadas nos dados reais coletados acima."
         )
     else:
         hints_section = ""

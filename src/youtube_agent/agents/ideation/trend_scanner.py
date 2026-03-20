@@ -34,8 +34,8 @@ async def _scan_trends_async(state: IdeationState, config: AppConfig) -> dict:
     except Exception as e:
         logger.warning("RSS feed scan failed: %s", e)
 
-    search_hints = state.get("search_hints") or []
-    yt_queries = search_hints or ["software development career"]
+    prompt = state.get("prompt") or ""
+    yt_queries = [prompt] if prompt else ["software development career"]
     try:
         yt_client = YouTubeClient()
         for query in yt_queries:
