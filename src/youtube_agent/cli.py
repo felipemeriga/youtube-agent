@@ -83,7 +83,7 @@ def _handle_interrupt(interrupt_data: dict) -> dict:
 
 
 def _run_graph(graph, input_state: dict, thread_id: str):
-    config = {"configurable": {"thread_id": thread_id}}
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
 
     for chunk in graph.stream(input_state, config, stream_mode="updates", subgraphs=True):
         namespace, update = chunk

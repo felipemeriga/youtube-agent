@@ -63,4 +63,4 @@ def create_orchestrator_graph(
     builder.add_conditional_edges("production", _after_production, [END])
     builder.add_edge("analytics", END)
 
-    return builder.compile(checkpointer=checkpointer, recursion_limit=50)
+    return builder.compile(checkpointer=checkpointer)
