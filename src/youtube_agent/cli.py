@@ -1,6 +1,8 @@
 from __future__ import annotations
 
+import sqlite3
 import uuid
+from contextlib import contextmanager
 
 import click
 from langgraph.checkpoint.sqlite import SqliteSaver
@@ -20,12 +22,20 @@ from youtube_agent.graph import create_orchestrator_graph
 console = Console()
 
 
+@contextmanager
 def _get_checkpointer(config):
     if config.persistence.backend == "postgres":
         from langgraph.checkpoint.postgres import PostgresSaver
 
-        return PostgresSaver.from_conn_string(config.persistence.postgres_url)
-    return SqliteSaver.from_conn_string(config.persistence.sqlite_path)
+        with PostgresSaver.from_conn_string(config.persistence.postgres_url) as cp:
+            yield cp
+    else:
+        conn = sqlite3.connect(config.persistence.sqlite_path, check_same_thread=False)
+        cp = SqliteSaver(conn)
+        try:
+            yield cp
+        finally:
+            conn.close()
 
 
 def _handle_interrupt(interrupt_data: dict) -> dict:
@@ -142,10 +152,10 @@ def ideate(ctx):
     """Run content ideation pipeline."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
-    checkpointer = _get_checkpointer(config)
-    graph = create_orchestrator_graph(config, checkpointer=checkpointer)
-    display_header("Ideação de Conteúdo", thread_id)
-    _run_graph(graph, {"mode": "ideate"}, thread_id)
+    with _get_checkpointer(config) as checkpointer:
+        graph = create_orchestrator_graph(config, checkpointer=checkpointer)
+        display_header("Ideação de Conteúdo", thread_id)
+        _run_graph(graph, {"mode": "ideate"}, thread_id)
 
 
 @cli.command()
@@ -155,8 +165,6 @@ def produce(ctx, topic):
     """Run video production pipeline."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
-    checkpointer = _get_checkpointer(config)
-    graph = create_orchestrator_graph(config, checkpointer=checkpointer)
 
     if topic:
         input_state = {
@@ -192,8 +200,10 @@ def produce(ctx, topic):
             },
         }
 
-    display_header("Produção de Vídeo", thread_id)
-    _run_graph(graph, input_state, thread_id)
+    with _get_checkpointer(config) as checkpointer:
+        graph = create_orchestrator_graph(config, checkpointer=checkpointer)
+        display_header("Produção de Vídeo", thread_id)
+        _run_graph(graph, input_state, thread_id)
 
 
 @cli.command()
@@ -202,10 +212,10 @@ def analyze(ctx):
     """Run channel analytics pipeline."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
-    checkpointer = _get_checkpointer(config)
-    graph = create_orchestrator_graph(config, checkpointer=checkpointer)
-    display_header("Análise do Canal", thread_id)
-    _run_graph(graph, {"mode": "analyze"}, thread_id)
+    with _get_checkpointer(config) as checkpointer:
+        graph = create_orchestrator_graph(config, checkpointer=checkpointer)
+        display_header("Análise do Canal", thread_id)
+        _run_graph(graph, {"mode": "analyze"}, thread_id)
 
 
 @cli.command()
@@ -214,10 +224,10 @@ def full(ctx):
     """Run full pipeline: ideation then production."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
-    checkpointer = _get_checkpointer(config)
-    graph = create_orchestrator_graph(config, checkpointer=checkpointer)
-    display_header("Pipeline Completo", thread_id)
-    _run_graph(graph, {"mode": "full"}, thread_id)
+    with _get_checkpointer(config) as checkpointer:
+        graph = create_orchestrator_graph(config, checkpointer=checkpointer)
+        display_header("Pipeline Completo", thread_id)
+        _run_graph(graph, {"mode": "full"}, thread_id)
 
 
 @cli.command()
@@ -226,15 +236,15 @@ def full(ctx):
 def resume(ctx, thread_id):
     """Resume an interrupted session."""
     config = ctx.obj["config"]
-    checkpointer = _get_checkpointer(config)
-    graph = create_orchestrator_graph(config, checkpointer=checkpointer)
-    display_header("Retomando Sessão", thread_id)
-    graph_config = {"configurable": {"thread_id": thread_id}}
-    state = graph.get_state(graph_config, subgraphs=True)
-    if not state.tasks:
-        console.print("[yellow]Nenhuma sessão pendente encontrada.[/yellow]")
-        return
-    _handle_resume(graph, thread_id)
+    with _get_checkpointer(config) as checkpointer:
+        graph = create_orchestrator_graph(config, checkpointer=checkpointer)
+        display_header("Retomando Sessão", thread_id)
+        graph_config = {"configurable": {"thread_id": thread_id}}
+        state = graph.get_state(graph_config, subgraphs=True)
+        if not state.tasks:
+            console.print("[yellow]Nenhuma sessão pendente encontrada.[/yellow]")
+            return
+        _handle_resume(graph, thread_id)
 
 
 @cli.command()
@@ -242,18 +252,18 @@ def resume(ctx, thread_id):
 def sessions(ctx):
     """List active/paused sessions."""
     config = ctx.obj["config"]
-    checkpointer = _get_checkpointer(config)
     from rich.table import Table
 
-    table = Table(title="Sessões", border_style="blue")
-    table.add_column("Thread ID", style="cyan")
-    table.add_column("Status")
-    table.add_column("Checkpoint")
-    for checkpoint_tuple in checkpointer.list(None):
-        tid = checkpoint_tuple.config.get("configurable", {}).get("thread_id", "?")
-        ts = checkpoint_tuple.checkpoint.get("ts", "?")
-        table.add_row(tid, "paused", ts)
-    console.print(table)
+    with _get_checkpointer(config) as checkpointer:
+        table = Table(title="Sessões", border_style="blue")
+        table.add_column("Thread ID", style="cyan")
+        table.add_column("Status")
+        table.add_column("Checkpoint")
+        for checkpoint_tuple in checkpointer.list(None):
+            tid = checkpoint_tuple.config.get("configurable", {}).get("thread_id", "?")
+            ts = checkpoint_tuple.checkpoint.get("ts", "?")
+            table.add_row(tid, "paused", ts)
+        console.print(table)
 
 
 if __name__ == "__main__":
