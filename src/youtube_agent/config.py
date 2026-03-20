@@ -47,20 +47,12 @@ class OutputConfig:
 
 
 @dataclass
-class PersistenceConfig:
-    backend: str = "sqlite"
-    sqlite_path: str = "./youtube_agent.db"
-    postgres_url: str = ""
-
-
-@dataclass
 class AppConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
     youtube: YouTubeConfig = field(default_factory=YouTubeConfig)
     reddit: RedditConfig = field(default_factory=RedditConfig)
     news: NewsConfig = field(default_factory=NewsConfig)
     output: OutputConfig = field(default_factory=OutputConfig)
-    persistence: PersistenceConfig = field(default_factory=PersistenceConfig)
 
 
 def load_config(config_path: str | None = None) -> AppConfig:
@@ -75,5 +67,4 @@ def load_config(config_path: str | None = None) -> AppConfig:
         reddit=RedditConfig(**raw.get("reddit", {})),
         news=NewsConfig(**raw.get("news", {})),
         output=OutputConfig(**raw.get("output", {})),
-        persistence=PersistenceConfig(**raw.get("persistence", {})),
     )

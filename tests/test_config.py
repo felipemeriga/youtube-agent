@@ -7,7 +7,6 @@ def test_load_config_defaults():
     assert config.llm.model == "gpt-4o-mini"
     assert config.llm.temperature == 0.3
     assert config.youtube.max_videos == 20
-    assert config.persistence.backend == "sqlite"
 
 
 def test_load_config_from_yaml(tmp_path):

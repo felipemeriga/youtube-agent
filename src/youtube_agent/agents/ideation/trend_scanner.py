@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from youtube_agent.config import AppConfig
@@ -12,7 +13,7 @@ from youtube_agent.tools.youtube_api import YouTubeClient
 logger = logging.getLogger(__name__)
 
 
-async def scan_trends(state: IdeationState, config: AppConfig) -> dict:
+async def _scan_trends_async(state: IdeationState, config: AppConfig) -> dict:
     all_trends = []
 
     try:
@@ -41,3 +42,7 @@ async def scan_trends(state: IdeationState, config: AppConfig) -> dict:
         logger.warning("YouTube trend scan failed: %s", e)
 
     return {"trends": all_trends}
+
+
+def scan_trends(state: IdeationState, config: AppConfig) -> dict:
+    return asyncio.run(_scan_trends_async(state, config))

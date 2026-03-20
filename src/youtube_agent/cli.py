@@ -1,11 +1,10 @@
 from __future__ import annotations
 
-import asyncio
-import sqlite3
+import os
 import uuid
-from contextlib import contextmanager
 
 import click
+from langgraph.checkpoint.postgres import PostgresSaver
 from langgraph.types import Command
 from rich.console import Console
 
@@ -22,22 +21,12 @@ from youtube_agent.graph import create_orchestrator_graph
 console = Console()
 
 
-@contextmanager
-def _get_checkpointer(config):
-    if config.persistence.backend == "postgres":
-        from langgraph.checkpoint.postgres import PostgresSaver
-
-        with PostgresSaver.from_conn_string(config.persistence.postgres_url) as cp:
-            yield cp
-    else:
-        conn = sqlite3.connect(config.persistence.sqlite_path, check_same_thread=False)
-        from langgraph.checkpoint.sqlite import SqliteSaver
-
-        cp = SqliteSaver(conn)
-        try:
-            yield cp
-        finally:
-            conn.close()
+def _get_db_url() -> str:
+    db_url = os.environ.get("SUPABASE_DB_URL")
+    if not db_url:
+        click.echo("Error: SUPABASE_DB_URL not set in .env", err=True)
+        raise SystemExit(1)
+    return db_url
 
 
 def _handle_interrupt(interrupt_data: dict) -> dict:
@@ -84,60 +73,26 @@ def _handle_interrupt(interrupt_data: dict) -> dict:
     return {"approved": choice.lower() in ("s", "sim", "y", "yes")}
 
 
-async def _run_graph_async(graph, input_state: dict, thread_id: str):
-    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
-
-    async for chunk in graph.astream(input_state, config, stream_mode="updates", subgraphs=True):
+def _stream_graph(graph, input_state, thread_config):
+    for chunk in graph.stream(input_state, thread_config, stream_mode="updates", subgraphs=True):
         namespace, update = chunk
         node_name = list(update.keys())[0] if update else "unknown"
         display_status(f"▶ {node_name}")
 
-    while True:
-        state = await graph.aget_state(config, subgraphs=True)
-        if not state.tasks:
-            break
+
+def _run_interrupt_loop(graph, thread_config):
+    state = graph.get_state(thread_config, subgraphs=True)
+    while state.tasks:
         has_interrupts = False
         for task in state.tasks:
             if hasattr(task, "interrupts") and task.interrupts:
                 has_interrupts = True
                 for intr in task.interrupts:
                     resume_value = _handle_interrupt(intr.value)
-                    async for chunk in graph.astream(
-                        Command(resume=resume_value),
-                        config,
-                        stream_mode="updates",
-                        subgraphs=True,
-                    ):
-                        namespace, update = chunk
-                        node_name = list(update.keys())[0] if update else "unknown"
-                        display_status(f"▶ {node_name}")
+                    _stream_graph(graph, Command(resume=resume_value), thread_config)
         if not has_interrupts:
             break
-
-
-async def _handle_resume_async(graph, thread_id: str):
-    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
-    while True:
-        state = await graph.aget_state(config, subgraphs=True)
-        if not state.tasks:
-            break
-        has_interrupts = False
-        for task in state.tasks:
-            if hasattr(task, "interrupts") and task.interrupts:
-                has_interrupts = True
-                for intr in task.interrupts:
-                    resume_value = _handle_interrupt(intr.value)
-                    async for chunk in graph.astream(
-                        Command(resume=resume_value),
-                        config,
-                        stream_mode="updates",
-                        subgraphs=True,
-                    ):
-                        namespace, update = chunk
-                        node_name = list(update.keys())[0] if update else "unknown"
-                        display_status(f"▶ {node_name}")
-        if not has_interrupts:
-            break
+        state = graph.get_state(thread_config, subgraphs=True)
 
 
 @click.group()
@@ -154,10 +109,15 @@ def ideate(ctx):
     """Run content ideation pipeline."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
-    with _get_checkpointer(config) as checkpointer:
+    db_url = _get_db_url()
+
+    with PostgresSaver.from_conn_string(db_url) as checkpointer:
+        checkpointer.setup()
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Ideação de Conteúdo", thread_id)
-        asyncio.run(_run_graph_async(graph, {"mode": "ideate"}, thread_id))
+        thread_config = {"configurable": {"thread_id": thread_id}}
+        _stream_graph(graph, {"mode": "ideate"}, thread_config)
+        _run_interrupt_loop(graph, thread_config)
 
 
 @cli.command()
@@ -202,10 +162,14 @@ def produce(ctx, topic):
             },
         }
 
-    with _get_checkpointer(config) as checkpointer:
+    db_url = _get_db_url()
+    with PostgresSaver.from_conn_string(db_url) as checkpointer:
+        checkpointer.setup()
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Produção de Vídeo", thread_id)
-        asyncio.run(_run_graph_async(graph, input_state, thread_id))
+        thread_config = {"configurable": {"thread_id": thread_id}}
+        _stream_graph(graph, input_state, thread_config)
+        _run_interrupt_loop(graph, thread_config)
 
 
 @cli.command()
@@ -214,10 +178,15 @@ def analyze(ctx):
     """Run channel analytics pipeline."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
-    with _get_checkpointer(config) as checkpointer:
+    db_url = _get_db_url()
+
+    with PostgresSaver.from_conn_string(db_url) as checkpointer:
+        checkpointer.setup()
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Análise do Canal", thread_id)
-        asyncio.run(_run_graph_async(graph, {"mode": "analyze"}, thread_id))
+        thread_config = {"configurable": {"thread_id": thread_id}}
+        _stream_graph(graph, {"mode": "analyze"}, thread_config)
+        _run_interrupt_loop(graph, thread_config)
 
 
 @cli.command()
@@ -226,37 +195,47 @@ def full(ctx):
     """Run full pipeline: ideation then production."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
-    with _get_checkpointer(config) as checkpointer:
+    db_url = _get_db_url()
+
+    with PostgresSaver.from_conn_string(db_url) as checkpointer:
+        checkpointer.setup()
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Pipeline Completo", thread_id)
-        asyncio.run(_run_graph_async(graph, {"mode": "full"}, thread_id))
+        thread_config = {"configurable": {"thread_id": thread_id}}
+        _stream_graph(graph, {"mode": "full"}, thread_config)
+        _run_interrupt_loop(graph, thread_config)
 
 
 @cli.command()
-@click.argument("thread_id")
+@click.option("--thread-id", required=True, help="Thread ID to resume")
 @click.pass_context
 def resume(ctx, thread_id):
     """Resume an interrupted session."""
     config = ctx.obj["config"]
-    with _get_checkpointer(config) as checkpointer:
+    db_url = _get_db_url()
+
+    with PostgresSaver.from_conn_string(db_url) as checkpointer:
+        checkpointer.setup()
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Retomando Sessão", thread_id)
-        graph_config = {"configurable": {"thread_id": thread_id}}
-        state = asyncio.run(graph.aget_state(graph_config, subgraphs=True))
+        thread_config = {"configurable": {"thread_id": thread_id}}
+        state = graph.get_state(thread_config, subgraphs=True)
         if not state.tasks:
             console.print("[yellow]Nenhuma sessão pendente encontrada.[/yellow]")
             return
-        asyncio.run(_handle_resume_async(graph, thread_id))
+        _stream_graph(graph, None, thread_config)
+        _run_interrupt_loop(graph, thread_config)
 
 
 @cli.command()
 @click.pass_context
 def sessions(ctx):
     """List active/paused sessions."""
-    config = ctx.obj["config"]
     from rich.table import Table
 
-    with _get_checkpointer(config) as checkpointer:
+    db_url = _get_db_url()
+    with PostgresSaver.from_conn_string(db_url) as checkpointer:
+        checkpointer.setup()
         table = Table(title="Sessões", border_style="blue")
         table.add_column("Thread ID", style="cyan")
         table.add_column("Status")

@@ -13,8 +13,8 @@ from youtube_agent.state import IdeationState
 def create_ideation_graph(llm: BaseChatModel, config: AppConfig) -> StateGraph:
     generate_topics, approve_topic = create_topic_generator_nodes(llm)
 
-    async def _scan(state: IdeationState) -> dict:
-        return await scan_trends(state, config)
+    def _scan(state: IdeationState) -> dict:
+        return scan_trends(state, config)
 
     def _analyze(state: IdeationState) -> dict:
         return analyze_channel(state, config)

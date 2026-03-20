@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import asyncio
 import logging
 
 from youtube_agent.state import ProductionState
@@ -43,5 +44,5 @@ async def _research_async(state: ProductionState) -> dict:
     return {"research_findings": all_findings}
 
 
-async def research_topic(state: ProductionState) -> dict:
-    return await _research_async(state)
+def research_topic(state: ProductionState) -> dict:
+    return asyncio.run(_research_async(state))

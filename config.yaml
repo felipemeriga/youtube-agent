@@ -4,8 +4,9 @@ llm:
   temperature: 0.3
 
 youtube:
-  channel_id: ""
-  competitor_channel_ids: []
+  channel_id: "UCTBd7NFpTqpBg-_EAm0Jg1w"
+  competitor_channel_ids:
+    - "UClSPuL8jrJGs7R99WpvVDGw"
   max_videos: 20
 
 reddit:
@@ -22,7 +23,3 @@ news:
 
 output:
   dir: "./output"
-
-persistence:
-  backend: "sqlite"
-  sqlite_path: "./youtube_agent.db"
