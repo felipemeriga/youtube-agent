@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import logging
 import os
 import uuid
 
@@ -97,9 +98,16 @@ def _run_interrupt_loop(graph, thread_config):
 
 @click.group()
 @click.option("--config", "config_path", default=None, help="Path to config.yaml")
+@click.option("-v", "--verbose", is_flag=True, help="Enable debug logging")
 @click.pass_context
-def cli(ctx, config_path):
+def cli(ctx, config_path, verbose):
     ctx.ensure_object(dict)
+    level = logging.DEBUG if verbose else logging.INFO
+    logging.basicConfig(
+        level=level,
+        format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
+        datefmt="%H:%M:%S",
+    )
     ctx.obj["config"] = load_config(config_path)
 
 
