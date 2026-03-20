@@ -1,11 +1,11 @@
 from __future__ import annotations
 
+import asyncio
 import sqlite3
 import uuid
 from contextlib import contextmanager
 
 import click
-from langgraph.checkpoint.sqlite import SqliteSaver
 from langgraph.types import Command
 from rich.console import Console
 
@@ -31,6 +31,8 @@ def _get_checkpointer(config):
             yield cp
     else:
         conn = sqlite3.connect(config.persistence.sqlite_path, check_same_thread=False)
+        from langgraph.checkpoint.sqlite import SqliteSaver
+
         cp = SqliteSaver(conn)
         try:
             yield cp
@@ -82,16 +84,16 @@ def _handle_interrupt(interrupt_data: dict) -> dict:
     return {"approved": choice.lower() in ("s", "sim", "y", "yes")}
 
 
-def _run_graph(graph, input_state: dict, thread_id: str):
+async def _run_graph_async(graph, input_state: dict, thread_id: str):
     config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
 
-    for chunk in graph.stream(input_state, config, stream_mode="updates", subgraphs=True):
+    async for chunk in graph.astream(input_state, config, stream_mode="updates", subgraphs=True):
         namespace, update = chunk
         node_name = list(update.keys())[0] if update else "unknown"
         display_status(f"▶ {node_name}")
 
     while True:
-        state = graph.get_state(config, subgraphs=True)
+        state = await graph.aget_state(config, subgraphs=True)
         if not state.tasks:
             break
         has_interrupts = False
@@ -100,7 +102,7 @@ def _run_graph(graph, input_state: dict, thread_id: str):
                 has_interrupts = True
                 for intr in task.interrupts:
                     resume_value = _handle_interrupt(intr.value)
-                    for chunk in graph.stream(
+                    async for chunk in graph.astream(
                         Command(resume=resume_value),
                         config,
                         stream_mode="updates",
@@ -113,10 +115,10 @@ def _run_graph(graph, input_state: dict, thread_id: str):
             break
 
 
-def _handle_resume(graph, thread_id: str):
-    config = {"configurable": {"thread_id": thread_id}}
+async def _handle_resume_async(graph, thread_id: str):
+    config = {"configurable": {"thread_id": thread_id}, "recursion_limit": 50}
     while True:
-        state = graph.get_state(config, subgraphs=True)
+        state = await graph.aget_state(config, subgraphs=True)
         if not state.tasks:
             break
         has_interrupts = False
@@ -125,7 +127,7 @@ def _handle_resume(graph, thread_id: str):
                 has_interrupts = True
                 for intr in task.interrupts:
                     resume_value = _handle_interrupt(intr.value)
-                    for chunk in graph.stream(
+                    async for chunk in graph.astream(
                         Command(resume=resume_value),
                         config,
                         stream_mode="updates",
@@ -155,7 +157,7 @@ def ideate(ctx):
     with _get_checkpointer(config) as checkpointer:
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Ideação de Conteúdo", thread_id)
-        _run_graph(graph, {"mode": "ideate"}, thread_id)
+        asyncio.run(_run_graph_async(graph, {"mode": "ideate"}, thread_id))
 
 
 @cli.command()
@@ -203,7 +205,7 @@ def produce(ctx, topic):
     with _get_checkpointer(config) as checkpointer:
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Produção de Vídeo", thread_id)
-        _run_graph(graph, input_state, thread_id)
+        asyncio.run(_run_graph_async(graph, input_state, thread_id))
 
 
 @cli.command()
@@ -215,7 +217,7 @@ def analyze(ctx):
     with _get_checkpointer(config) as checkpointer:
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Análise do Canal", thread_id)
-        _run_graph(graph, {"mode": "analyze"}, thread_id)
+        asyncio.run(_run_graph_async(graph, {"mode": "analyze"}, thread_id))
 
 
 @cli.command()
@@ -227,7 +229,7 @@ def full(ctx):
     with _get_checkpointer(config) as checkpointer:
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Pipeline Completo", thread_id)
-        _run_graph(graph, {"mode": "full"}, thread_id)
+        asyncio.run(_run_graph_async(graph, {"mode": "full"}, thread_id))
 
 
 @cli.command()
@@ -240,11 +242,11 @@ def resume(ctx, thread_id):
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Retomando Sessão", thread_id)
         graph_config = {"configurable": {"thread_id": thread_id}}
-        state = graph.get_state(graph_config, subgraphs=True)
+        state = asyncio.run(graph.aget_state(graph_config, subgraphs=True))
         if not state.tasks:
             console.print("[yellow]Nenhuma sessão pendente encontrada.[/yellow]")
             return
-        _handle_resume(graph, thread_id)
+        asyncio.run(_handle_resume_async(graph, thread_id))
 
 
 @cli.command()
