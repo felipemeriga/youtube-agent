@@ -9,6 +9,7 @@ from youtube_agent.agents.production.researcher import research_topic
 from youtube_agent.agents.production.writer import create_writer_nodes
 from youtube_agent.state import ProductionState
 from youtube_agent.tools.tavily_search import create_tavily_tool
+from youtube_agent.utils import get_output_dir, save_json, save_text
 
 
 def create_production_graph(llm: BaseChatModel, output_dir: str = "./output") -> StateGraph:
@@ -33,6 +34,19 @@ def create_production_graph(llm: BaseChatModel, output_dir: str = "./output") ->
     builder.add_edge("writer", "approve_script")
     builder.add_edge("approve_script", "metadata_generator")
     builder.add_edge("metadata_generator", "approve_metadata")
-    builder.add_edge("approve_metadata", END)
+
+    def _save_output(state: ProductionState) -> dict:
+        out = get_output_dir(output_dir, state["topic"]["title"])
+        if state.get("script"):
+            save_text(out / "script.md", state["script"]["content"])
+        if state.get("outline"):
+            save_json(out / "outline.json", state["outline"])
+        if state.get("metadata"):
+            save_json(out / "metadata.json", state["metadata"])
+        return {}
+
+    builder.add_node("save_output", _save_output)
+    builder.add_edge("approve_metadata", "save_output")
+    builder.add_edge("save_output", END)
 
     return builder
