@@ -9,8 +9,8 @@ from langgraph.types import interrupt
 from youtube_agent.state import ProductionState, VideoOutline
 
 OUTLINER_PROMPT = """\
-Você é um roteirista especialista em vídeos de YouTube sobre tecnologia e carreira \
-para desenvolvedores brasileiros.
+Você é um roteirista especialista em vídeos de YouTube para o canal "Além do Código", \
+um canal brasileiro em português que cobre temas variados.
 
 Tópico: {title}
 Ângulo: {angle}
@@ -20,10 +20,11 @@ Pesquisa realizada:
 
 Crie uma estrutura detalhada para o vídeo com:
 1. sections: lista de seções, cada uma com "title", "description" e "duration" (em minutos)
-2. hooks: 2-3 opções de ganchos para a abertura do vídeo
-3. estimated_duration: duração total estimada do vídeo
+2. hooks: 2-3 opções de ganchos provocativos para a abertura do vídeo
+3. estimated_duration: duração total estimada do vídeo (ex: "14-16 min")
 
-Inclua: introdução com gancho, pontos principais, exemplos práticos, conclusão e CTA.
+A estrutura deve incluir: abertura com gancho forte, seções principais com dados concretos, \
+uma seção de análise/opinião, e fechamento com CTA.
 
 Retorne APENAS um JSON object, sem outro texto.
 

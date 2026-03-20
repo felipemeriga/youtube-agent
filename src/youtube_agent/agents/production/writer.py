@@ -7,8 +7,8 @@ from langgraph.types import interrupt
 from youtube_agent.state import ProductionState, VideoScript
 
 WRITER_PROMPT = """\
-Você é um roteirista de vídeos de YouTube. Escreva um roteiro completo em português \
-para o canal "Além do Código", voltado para desenvolvedores brasileiros.
+Você é um roteirista profissional de vídeos de YouTube para o canal "Além do Código", \
+um canal brasileiro em português.
 
 Tópico: {title}
 Ângulo: {angle}
@@ -16,17 +16,81 @@ Tópico: {title}
 Estrutura aprovada:
 {outline}
 
-Pesquisa:
+Pesquisa realizada (com fontes):
 {research}
 
-Escreva o roteiro completo incluindo:
-- Falas naturais e conversacionais (como se estivesse conversando com o espectador)
-- Notas para o apresentador entre [colchetes]
-- Indicações de transição entre seções
-- Marcações de tempo aproximadas
-- CTA para inscrição e comentários
+Escreva o roteiro completo seguindo EXATAMENTE este formato em Markdown:
 
-Escreva o roteiro completo abaixo:"""
+---
+
+# [Título do Vídeo]
+
+## ⏱️ TIMING ([duração estimada])
+
+| Seção | Tempo | Duração |
+| --- | --- | --- |
+| [Seção 1] | 0:00 - X:XX | X:XX |
+| [Seção 2] | X:XX - X:XX | X:XX |
+(uma linha para cada seção da estrutura aprovada)
+
+---
+
+## 📊 STATS E DADOS (com fontes pra citar)
+
+(Para cada dado relevante da pesquisa, use este formato:)
+
+> **Dado N**: [Estatística ou fato concreto encontrado na pesquisa]
+>
+> *Fonte: [Nome da fonte]*
+
+(Inclua 5-10 dados com suas fontes. Use APENAS dados reais da pesquisa fornecida.)
+
+---
+
+## 🎙️ TALKING POINTS (frases prontas pra falar)
+
+(5-8 frases curtas, provocativas, no tom conversacional do canal. Cada uma em um bullet.)
+
+- "frase 1"
+- "frase 2"
+
+---
+
+## 📝 ROTEIRO COMPLETO
+
+### 🎬 ABERTURA (0:00 - X:XX)
+
+"[Falas naturais e conversacionais]"
+
+### 📌 [SEÇÃO 1] (X:XX - X:XX)
+
+"[Falas com dados, exemplos, transições]"
+
+(Repetir para cada seção da estrutura)
+
+### 🎬 FECHAMENTO (X:XX - X:XX)
+
+"[Fechamento + CTA para inscrição e comentários]"
+
+---
+
+## 🔗 FONTES VERIFICADAS
+
+1. **[Nome da fonte]** — [Descrição curta] — [URL se disponível]
+2. **[Nome da fonte]** — [Descrição curta] — [URL se disponível]
+
+---
+
+REGRAS IMPORTANTES:
+- Todas as falas em português brasileiro, tom conversacional
+- APENAS use dados e fontes que vieram da pesquisa fornecida acima
+- NÃO invente dados, estatísticas ou fontes
+- Inclua URLs reais das fontes quando disponíveis na pesquisa
+- Notas para o apresentador entre [colchetes]
+- Os talking points devem ser frases prontas, provocativas, que funcionam como sound bites
+- O timing deve ser realista e somar a duração total estimada
+
+Escreva o roteiro completo:"""
 
 
 def _write_script(state: ProductionState, llm: BaseChatModel) -> dict:
@@ -34,7 +98,10 @@ def _write_script(state: ProductionState, llm: BaseChatModel) -> dict:
         f"{i + 1}. {s.get('title', '')} ({s.get('duration', '')}): {s.get('description', '')}"
         for i, s in enumerate(state["outline"]["sections"])
     )
-    research_text = "\n".join(f"- {f['content'][:300]}" for f in state["research_findings"][:8])
+    research_text = "\n".join(
+        f"- [{f.get('tool', 'web')}] {f['content'][:500]}\n  Fonte: {f.get('source', 'N/A')}"
+        for f in state["research_findings"][:15]
+    )
     prompt = WRITER_PROMPT.format(
         title=state["topic"]["title"],
         angle=state["topic"]["angle"],
