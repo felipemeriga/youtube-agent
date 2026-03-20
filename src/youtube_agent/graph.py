@@ -33,7 +33,11 @@ def _after_ideation(state: OrchestratorState) -> Literal["prepare_production", "
     return END
 
 
-def _after_production(state: OrchestratorState) -> Literal["__end__"]:
+def _after_production(
+    state: OrchestratorState,
+) -> Literal["analytics", "__end__"]:
+    if state.get("mode") == "full":
+        return "analytics"
     return END
 
 
@@ -60,7 +64,7 @@ def create_orchestrator_graph(
     builder.add_conditional_edges(START, _route_by_mode, ["ideation", "production", "analytics"])
     builder.add_conditional_edges("ideation", _after_ideation, ["prepare_production", END])
     builder.add_edge("prepare_production", "production")
-    builder.add_conditional_edges("production", _after_production, [END])
+    builder.add_conditional_edges("production", _after_production, ["analytics", END])
     builder.add_edge("analytics", END)
 
     return builder.compile(checkpointer=checkpointer)
