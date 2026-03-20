@@ -1,0 +1,28 @@
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.3
+
+youtube:
+  channel_id: ""
+  competitor_channel_ids: []
+  max_videos: 20
+
+reddit:
+  subreddits:
+    - "brdev"
+    - "cscareerquestions"
+    - "ExperiencedDevs"
+
+news:
+  feeds:
+    - "https://dev.to/feed"
+    - "https://www.infoq.com/feed/"
+    - "https://techcrunch.com/feed/"
+
+output:
+  dir: "./output"
+
+persistence:
+  backend: "sqlite"
+  sqlite_path: "./youtube_agent.db"
