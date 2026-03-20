@@ -102,7 +102,7 @@ def _run_interrupt_loop(graph, thread_config):
 @click.pass_context
 def cli(ctx, config_path, verbose):
     ctx.ensure_object(dict)
-    level = logging.DEBUG if verbose else logging.INFO
+    level = logging.DEBUG if verbose else logging.WARNING
     logging.basicConfig(
         level=level,
         format="%(asctime)s [%(levelname)s] %(name)s: %(message)s",
