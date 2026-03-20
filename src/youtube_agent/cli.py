@@ -112,8 +112,9 @@ def cli(ctx, config_path, verbose):
 
 
 @cli.command()
+@click.option("--hint", "-h", multiple=True, help="Search hints/topics to explore (repeatable)")
 @click.pass_context
-def ideate(ctx):
+def ideate(ctx, hint):
     """Run content ideation pipeline."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
@@ -124,7 +125,8 @@ def ideate(ctx):
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Ideação de Conteúdo", thread_id)
         thread_config = {"configurable": {"thread_id": thread_id}}
-        _stream_graph(graph, {"mode": "ideate"}, thread_config)
+        input_state = {"mode": "ideate", "search_hints": list(hint)}
+        _stream_graph(graph, input_state, thread_config)
         _run_interrupt_loop(graph, thread_config)
 
 
@@ -198,9 +200,10 @@ def analyze(ctx):
 
 
 @cli.command()
+@click.option("--hint", "-h", multiple=True, help="Search hints/topics to explore (repeatable)")
 @click.pass_context
-def full(ctx):
-    """Run full pipeline: ideation then production."""
+def full(ctx, hint):
+    """Run full pipeline: ideation then production then analytics."""
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
     db_url = _get_db_url()
@@ -210,7 +213,8 @@ def full(ctx):
         graph = create_orchestrator_graph(config, checkpointer=checkpointer)
         display_header("Pipeline Completo", thread_id)
         thread_config = {"configurable": {"thread_id": thread_id}}
-        _stream_graph(graph, {"mode": "full"}, thread_config)
+        input_state = {"mode": "full", "search_hints": list(hint)}
+        _stream_graph(graph, input_state, thread_config)
         _run_interrupt_loop(graph, thread_config)
 
 

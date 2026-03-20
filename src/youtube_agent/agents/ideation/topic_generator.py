@@ -22,6 +22,8 @@ Estatísticas do canal:
 Vídeos de concorrentes:
 {competitor_insights}
 
+{hints_section}
+
 Com base nesses dados, sugira 5-10 tópicos para novos vídeos. Para cada tópico, forneça:
 1. title: título do vídeo (em português)
 2. angle: ângulo/abordagem específica
@@ -49,10 +51,20 @@ def _generate_topics(state: IdeationState, llm: BaseChatModel) -> dict:
         for c in state.get("competitor_insights", [])[:15]
     )
 
+    search_hints = state.get("search_hints") or []
+    if search_hints:
+        hints_section = (
+            "O criador do canal pediu para considerar especialmente estes temas/ideias:\n"
+            + "\n".join(f"- {h}" for h in search_hints)
+        )
+    else:
+        hints_section = ""
+
     prompt = TOPIC_PROMPT.format(
         trends=trends_text,
         channel_stats=channel_text,
         competitor_insights=competitor_text or "Sem dados de concorrentes",
+        hints_section=hints_section,
     )
     response = llm.invoke([HumanMessage(content=prompt)])
     raw = response.content.strip()
