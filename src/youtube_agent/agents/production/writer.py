@@ -47,6 +47,20 @@ Escreva o roteiro completo seguindo EXATAMENTE este formato em Markdown:
 
 ---
 
+## 📚 CONTEXTO E APRENDIZADO
+
+(Escreva um texto curto de 3-5 parágrafos explicando o contexto do tema para o apresentador \
+estudar antes de gravar. Inclua:
+- Contexto histórico ou técnico essencial
+- Conceitos-chave que o apresentador precisa dominar
+- Nuances e pontos controversos do tema
+- Links de artigos, vídeos ou papers relevantes para aprofundamento
+
+O objetivo é que o apresentador consiga falar com propriedade sobre o tema, \
+mesmo que não seja especialista. Escreva de forma didática e direta.)
+
+---
+
 ## 🎙️ TALKING POINTS (frases prontas pra falar)
 
 (5-8 frases curtas, provocativas, no tom conversacional do canal. Cada uma em um bullet.)
