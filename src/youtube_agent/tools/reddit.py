@@ -1,36 +1,34 @@
 from __future__ import annotations
 
 import logging
-import os
 
-import praw
+import httpx
 
 from youtube_agent.state import TrendItem
 
 logger = logging.getLogger(__name__)
 
-
-def _create_reddit_client() -> praw.Reddit:
-    return praw.Reddit(
-        client_id=os.environ.get("REDDIT_CLIENT_ID", ""),
-        client_secret=os.environ.get("REDDIT_CLIENT_SECRET", ""),
-        user_agent=os.environ.get("REDDIT_USER_AGENT", "youtube-agent/0.1.0"),
-    )
+_HEADERS = {"User-Agent": "youtube-agent/0.1.0"}
 
 
 def fetch_subreddit_trending(subreddit_name: str, limit: int = 10) -> list[TrendItem]:
     items: list[TrendItem] = []
     try:
-        reddit = _create_reddit_client()
-        subreddit = reddit.subreddit(subreddit_name)
-        for submission in subreddit.hot(limit=limit):
+        url = f"https://www.reddit.com/r/{subreddit_name}/hot.json?limit={limit}"
+        response = httpx.get(url, headers=_HEADERS, timeout=10, follow_redirects=True)
+        response.raise_for_status()
+        data = response.json()
+        for post in data.get("data", {}).get("children", []):
+            post_data = post.get("data", {})
+            if post_data.get("stickied"):
+                continue
             items.append(
                 TrendItem(
-                    title=submission.title,
+                    title=post_data.get("title", ""),
                     source="reddit",
-                    url=submission.url,
-                    score=submission.score,
-                    summary=submission.selftext[:200] if submission.selftext else "",
+                    url=f"https://reddit.com{post_data.get('permalink', '')}",
+                    score=post_data.get("score", 0),
+                    summary=post_data.get("selftext", "")[:200],
                 )
             )
     except Exception as e:
