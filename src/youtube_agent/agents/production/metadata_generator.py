@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-from typing import Literal
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from langgraph.types import Command, interrupt
+from langgraph.types import interrupt
 
 from youtube_agent.state import ProductionState, VideoMetadata
 
@@ -49,11 +48,11 @@ def _generate_metadata(state: ProductionState, llm: BaseChatModel) -> dict:
     return {"metadata": metadata}
 
 
-def _approve_metadata(state: ProductionState) -> Command[Literal["__end__"]]:
+def _approve_metadata(state: ProductionState) -> dict:
     decision = interrupt({"metadata": state["metadata"], "action": "Aprovar metadados? [s/n]"})
     if not decision.get("approved", False):
-        return Command(update={"metadata": None}, goto="__end__")
-    return Command(goto="__end__")
+        return {"metadata": None}
+    return {}
 
 
 def create_metadata_nodes(llm: BaseChatModel):

@@ -30,9 +30,28 @@ def create_production_graph(llm: BaseChatModel, output_dir: str = "./output") ->
     builder.add_edge(START, "researcher")
     builder.add_edge("researcher", "outliner")
     builder.add_edge("outliner", "approve_outline")
-    builder.add_edge("approve_outline", "writer")
+
+    def _route_after_outline(state: ProductionState):
+        if state.get("outline") is None:
+            return END
+        return "writer"
+
+    def _route_after_script(state: ProductionState):
+        if state.get("script") is None:
+            return END
+        return "metadata_generator"
+
+    def _route_after_metadata(state: ProductionState):
+        if state.get("metadata") is None:
+            return END
+        return "save_output"
+
+    builder.add_conditional_edges("approve_outline", _route_after_outline, ["writer", END])
+    builder.add_conditional_edges(
+        "approve_script", _route_after_script, ["metadata_generator", END]
+    )
+
     builder.add_edge("writer", "approve_script")
-    builder.add_edge("approve_script", "metadata_generator")
     builder.add_edge("metadata_generator", "approve_metadata")
 
     def _save_output(state: ProductionState) -> dict:
@@ -46,7 +65,7 @@ def create_production_graph(llm: BaseChatModel, output_dir: str = "./output") ->
         return {}
 
     builder.add_node("save_output", _save_output)
-    builder.add_edge("approve_metadata", "save_output")
+    builder.add_conditional_edges("approve_metadata", _route_after_metadata, ["save_output", END])
     builder.add_edge("save_output", END)
 
     return builder

@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-from typing import Literal
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from langgraph.types import Command, interrupt
+from langgraph.types import interrupt
 
 from youtube_agent.state import AnalyticsState, StrategyReport
 
@@ -52,9 +51,9 @@ def _generate_strategy(state: AnalyticsState, llm: BaseChatModel) -> dict:
     return {"strategy": strategy}
 
 
-def _approve_strategy(state: AnalyticsState) -> Command[Literal["__end__"]]:
+def _approve_strategy(state: AnalyticsState) -> dict:
     interrupt({"strategy": state["strategy"], "action": "Estratégia gerada. Revisar? [s/n]"})
-    return Command(goto="__end__")
+    return {}
 
 
 def create_strategist_nodes(llm: BaseChatModel):

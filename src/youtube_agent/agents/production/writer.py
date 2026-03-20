@@ -1,10 +1,8 @@
 from __future__ import annotations
 
-from typing import Literal
-
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from langgraph.types import Command, interrupt
+from langgraph.types import interrupt
 
 from youtube_agent.state import ProductionState, VideoScript
 
@@ -49,7 +47,7 @@ def _write_script(state: ProductionState, llm: BaseChatModel) -> dict:
     return {"script": script}
 
 
-def _approve_script(state: ProductionState) -> Command[Literal["__end__"]]:
+def _approve_script(state: ProductionState) -> dict:
     decision = interrupt(
         {
             "script_preview": state["script"]["content"][:500] + "...",
@@ -58,8 +56,8 @@ def _approve_script(state: ProductionState) -> Command[Literal["__end__"]]:
         }
     )
     if not decision.get("approved", False):
-        return Command(update={"script": None}, goto="__end__")
-    return Command(goto="__end__")
+        return {"script": None}
+    return {}
 
 
 def create_writer_nodes(llm: BaseChatModel):

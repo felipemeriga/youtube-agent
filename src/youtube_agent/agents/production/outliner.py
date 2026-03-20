@@ -1,11 +1,10 @@
 from __future__ import annotations
 
 import json
-from typing import Literal
 
 from langchain_core.language_models import BaseChatModel
 from langchain_core.messages import HumanMessage
-from langgraph.types import Command, interrupt
+from langgraph.types import interrupt
 
 from youtube_agent.state import ProductionState, VideoOutline
 
@@ -55,11 +54,11 @@ def _generate_outline(state: ProductionState, llm: BaseChatModel) -> dict:
     return {"outline": outline}
 
 
-def _approve_outline(state: ProductionState) -> Command[Literal["__end__"]]:
+def _approve_outline(state: ProductionState) -> dict:
     decision = interrupt({"outline": state["outline"], "action": "Aprovar estrutura? [s/n/editar]"})
     if not decision.get("approved", False):
-        return Command(update={"outline": None}, goto="__end__")
-    return Command(goto="__end__")
+        return {"outline": None}
+    return {}
 
 
 def create_outliner_nodes(llm: BaseChatModel):
