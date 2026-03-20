@@ -10,8 +10,14 @@ from langgraph.types import Command, interrupt
 from youtube_agent.state import IdeationState, TopicSuggestion
 
 TOPIC_PROMPT = """\
-Você é um especialista em conteúdo para YouTube focado em tecnologia e carreira \
-internacional para desenvolvedores brasileiros.
+Você é um especialista em estratégia de conteúdo para YouTube.
+
+O canal "Além do Código" é um canal brasileiro em português que aborda temas variados como \
+tecnologia, desenvolvimento de software, carreira internacional, soft-skills, geopolítica, \
+economia e outros assuntos relevantes para profissionais de tecnologia e público geral.
+
+Abaixo estão dados reais coletados de diversas fontes. Use APENAS estes dados como base \
+para suas sugestões. Não invente tendências ou dados que não estejam listados abaixo.
 
 Dados de tendências coletados:
 {trends}
@@ -19,22 +25,23 @@ Dados de tendências coletados:
 Estatísticas do canal:
 {channel_stats}
 
-Vídeos de concorrentes:
+Vídeos de melhor performance dos concorrentes:
 {competitor_insights}
 
 {hints_section}
 
-Com base nesses dados, sugira 5-10 tópicos para novos vídeos. Para cada tópico, forneça:
+Com base EXCLUSIVAMENTE nos dados acima, sugira 5-10 tópicos para novos vídeos. \
+Para cada tópico, forneça:
 1. title: título do vídeo (em português)
 2. angle: ângulo/abordagem específica
-3. timeliness: por que este tópico é relevante agora
+3. timeliness: por que este tópico é relevante agora (cite a fonte/tendência que motivou)
 4. estimated_interest: "high", "medium" ou "low"
 
-Foque em temas que ajudem desenvolvedores brasileiros a:
-- Conseguir empregos no exterior
-- Melhorar habilidades técnicas
-- Desenvolver soft-skills
-- Entender o mercado internacional de tecnologia
+Regras:
+- Cada sugestão DEVE ser baseada em pelo menos uma tendência ou dado real listado acima
+- NÃO invente tendências ou informações
+- Os títulos devem ser em português
+- Considere o que está performando bem nos concorrentes para identificar oportunidades
 
 Retorne APENAS um JSON array de objetos, sem outro texto.
 

@@ -95,17 +95,18 @@ class YouTubeClient:
         return items
 
     def get_competitor_videos(
-        self, channel_ids: list[str], max_per_channel: int = 10
+        self, channel_ids: list[str], max_per_channel: int = 20, top_n: int = 10
     ) -> list[CompetitorVideo]:
         results: list[CompetitorVideo] = []
         for cid in channel_ids:
             try:
                 videos = self.get_channel_videos(cid, max_results=max_per_channel)
+                top_videos = sorted(videos, key=lambda v: v["views"], reverse=True)[:top_n]
                 ch_response = self._service.channels().list(id=cid, part="snippet").execute()
                 channel_name = (
                     ch_response["items"][0]["snippet"]["title"] if ch_response["items"] else cid
                 )
-                for v in videos:
+                for v in top_videos:
                     results.append(
                         CompetitorVideo(
                             channel_name=channel_name,

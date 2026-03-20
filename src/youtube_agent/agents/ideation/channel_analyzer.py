@@ -19,6 +19,7 @@ def analyze_channel(state: IdeationState, config: AppConfig) -> dict:
     try:
         yt_client = YouTubeClient()
         stats = yt_client.get_channel_stats(config.youtube.channel_id)
+        logger.info(f"Channel stats: {stats}")
         result["channel_stats"] = stats
     except Exception as e:
         logger.warning("Channel stats fetch failed: %s", e)
@@ -29,6 +30,7 @@ def analyze_channel(state: IdeationState, config: AppConfig) -> dict:
             competitors = yt_client.get_competitor_videos(
                 config.youtube.competitor_channel_ids, max_per_channel=10
             )
+            logger.info(f"Competitors: {competitors}")
             result["competitor_insights"] = competitors
         except Exception as e:
             logger.warning("Competitor analysis failed: %s", e)
