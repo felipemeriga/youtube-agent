@@ -8,11 +8,11 @@ llm:
 models:
   writer:
     provider: "openai"
-    model: "gpt-4o"
+    model: "gpt-4.1"
     temperature: 0.5
   outliner:
     provider: "openai"
-    model: "gpt-4o"
+    model: "gpt-4.1"
     temperature: 0.3
 
 youtube:
