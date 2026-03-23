@@ -1,2 +1,16 @@
+__pycache__/
+*.py[cod]
+*.egg-info/
+dist/
+build/
+.eggs/
+*.egg
+.env
+.venv/
+venv/
+output/
+*.db
+.ruff_cache/
+.pytest_cache/
 .DS_Store
 .npmrc

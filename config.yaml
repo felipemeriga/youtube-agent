@@ -1,0 +1,37 @@
+llm:
+  provider: "openai"
+  model: "gpt-4o-mini"
+  temperature: 0.3
+
+# Per-node model overrides (falls back to llm above if not specified)
+# Available roles: topic_generator, outliner, writer, metadata_generator
+models:
+  writer:
+    provider: "openai"
+    model: "gpt-4.1"
+    temperature: 0.5
+  outliner:
+    provider: "openai"
+    model: "gpt-4.1"
+    temperature: 0.3
+
+youtube:
+  channel_id: "UCTBd7NFpTqpBg-_EAm0Jg1w"
+  competitor_channel_ids:
+    - "UClSPuL8jrJGs7R99WpvVDGw"
+  max_videos: 20
+
+reddit:
+  subreddits:
+    - "brdev"
+    - "cscareerquestions"
+    - "ExperiencedDevs"
+
+news:
+  feeds:
+    - "https://dev.to/feed"
+    - "https://www.infoq.com/feed/"
+    - "https://techcrunch.com/feed/"
+
+output:
+  dir: "./output"

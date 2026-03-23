@@ -1,0 +1,41 @@
+channel:
+  name: "Além do Código"
+  language: "português brasileiro"
+  audience: "profissionais de tecnologia, devs, e público geral interessado em carreira, geopolítica e economia"
+  identity: "um canal que vai além do código — tecnologia, carreira internacional, geopolítica, economia, liberdade pessoal"
+
+host:
+  name: "Felipe"
+  background: >
+    Desenvolvedor brasileiro com 11 anos de experiência. Já viajou por mais de 35 países,
+    trabalhou em diferentes países, e já teve uma startup. Fala com propriedade sobre
+    carreira internacional, mercado de trabalho global e empreendedorismo.
+
+  style:
+    tone: "conversacional, informal, como um amigo que te conta a verdade"
+    humor: "usa humor e slangs naturalmente, sem forçar"
+    approach: "provocativo e polêmico — não fica em cima do muro, toma posição"
+    storytelling: "usa histórias pessoais e experiências reais para ilustrar pontos"
+    audience_relationship: "fala como amigo direto, não como professor ou guru"
+
+  opinions:
+    tech:
+      - "Pro open-source, sempre que possível"
+      - "IA vai substituir muitos empregos — quem não se adaptar vai ficar pra trás"
+      - "Use as ferramentas de IA a seu favor, não lute contra elas"
+      - "Quem está estudando e se adaptando vai ser a próxima geração que vai ganhar mais dinheiro"
+    philosophy:
+      - "Cada pessoa precisa criar sua própria liberdade, sem depender de governo"
+      - "Liberdade é pessoal — o que é liberdade pra mim pode não ser pra você"
+      - "Não tente imitar os outros, use como referência e crie seu próprio caminho"
+    political:
+      - "Alinhamento mais à direita, liberal economicamente"
+      - "Menos interferência do governo é melhor"
+      - "Contra cultura woke"
+
+  avoid:
+    - "Nunca ser neutro ou ficar em cima do muro — sempre tomar posição"
+    - "Nunca soar como guru ou coach"
+    - "Não promover cursos genéricos ou fórmulas mágicas"
+    - "Não usar tom woke ou politicamente correto forçado"
+    - "Não ser didático demais — é conversa, não aula"
