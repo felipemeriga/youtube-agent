@@ -7,12 +7,12 @@ llm:
 # Available roles: topic_generator, outliner, writer, metadata_generator
 models:
   writer:
-    provider: "anthropic"
-    model: "claude-sonnet-4-6"
+    provider: "openai"
+    model: "gpt-4o"
     temperature: 0.5
   outliner:
-    provider: "anthropic"
-    model: "claude-sonnet-4-6"
+    provider: "openai"
+    model: "gpt-4o"
     temperature: 0.3
 
 youtube:
