@@ -6,11 +6,6 @@ def test_route_by_mode_ideate():
     assert _route_by_mode(state) == "ideation"
 
 
-def test_route_by_mode_analyze():
-    state = {"selected_topic": None, "topic": None, "mode": "analyze"}
-    assert _route_by_mode(state) == "prepare_analytics"
-
-
 def test_route_by_mode_full():
     state = {"selected_topic": None, "topic": None, "mode": "full"}
     assert _route_by_mode(state) == "ideation"

@@ -63,13 +63,6 @@ def _handle_interrupt(interrupt_data: dict) -> dict:
         choice = prompt_approval(action)
         return {"approved": choice.lower() in ("s", "sim", "y", "yes")}
 
-    if "strategy" in interrupt_data:
-        strategy = interrupt_data["strategy"]
-        for key, value in strategy.items():
-            console.print(f"\n[bold]{key}:[/bold] {value}")
-        choice = prompt_approval(action)
-        return {"approved": choice.lower() in ("s", "sim", "y", "yes")}
-
     choice = prompt_approval(action)
     return {"approved": choice.lower() in ("s", "sim", "y", "yes")}
 
@@ -196,32 +189,8 @@ def produce(ctx, topic):
 @cli.command()
 @click.argument("prompt", default="")
 @click.pass_context
-def analyze(ctx, prompt):
-    """Run channel analytics pipeline.
-
-    Optionally pass a PROMPT to get topic-specific analytics, e.g.:
-
-        youtube-agent analyze "Iran war and artificial intelligence"
-    """
-    config = ctx.obj["config"]
-    thread_id = str(uuid.uuid4())
-    db_url = _get_db_url()
-
-    with PostgresSaver.from_conn_string(db_url) as checkpointer:
-        checkpointer.setup()
-        graph = create_orchestrator_graph(config, checkpointer=checkpointer)
-        display_header("Análise do Canal", thread_id)
-        thread_config = {"configurable": {"thread_id": thread_id}}
-        input_state = {"mode": "analyze", "prompt": prompt}
-        _stream_graph(graph, input_state, thread_config)
-        _run_interrupt_loop(graph, thread_config)
-
-
-@cli.command()
-@click.argument("prompt", default="")
-@click.pass_context
 def full(ctx, prompt):
-    """Run full pipeline: ideation then production then analytics.
+    """Run full pipeline: ideation then production.
 
     Optionally pass a PROMPT describing what you want, e.g.:
 

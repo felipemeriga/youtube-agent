@@ -9,7 +9,7 @@ def test_cli_help():
     assert result.exit_code == 0
     assert "ideate" in result.output
     assert "produce" in result.output
-    assert "analyze" in result.output
+
     assert "full" in result.output
     assert "resume" in result.output
     assert "sessions" in result.output

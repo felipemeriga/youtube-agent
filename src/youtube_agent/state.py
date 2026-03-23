@@ -71,20 +71,6 @@ class VideoMetadata(TypedDict):
     thumbnail_texts: list[str]
 
 
-class AnalysisReport(TypedDict):
-    top_performing: list[VideoData]
-    bottom_performing: list[VideoData]
-    patterns: str
-    competitor_comparison: str
-
-
-class StrategyReport(TypedDict):
-    content_suggestions: str
-    title_patterns: str
-    posting_recommendations: str
-    growth_opportunities: str
-
-
 class IdeationState(TypedDict):
     trends: Annotated[list[TrendItem], operator.add]
     channel_stats: ChannelStats | None
@@ -100,15 +86,6 @@ class ProductionState(TypedDict):
     outline: VideoOutline | None
     script: VideoScript | None
     metadata: VideoMetadata | None
-
-
-class AnalyticsState(TypedDict):
-    topic_context: str
-    channel_videos: list[VideoData]
-    competitor_videos: list[VideoData]
-    topic_videos: list[VideoData]
-    analysis: AnalysisReport | None
-    strategy: StrategyReport | None
 
 
 class OrchestratorState(TypedDict):
