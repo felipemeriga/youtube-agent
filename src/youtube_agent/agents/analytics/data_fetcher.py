@@ -10,7 +10,8 @@ logger = logging.getLogger(__name__)
 
 
 def fetch_data(state: AnalyticsState, config: AppConfig) -> dict:
-    result: dict = {"channel_videos": [], "competitor_videos": []}
+    result: dict = {"channel_videos": [], "competitor_videos": [], "topic_videos": []}
+    topic_context = state.get("topic_context") or ""
 
     if not config.youtube.channel_id:
         logger.warning("No YouTube channel_id configured")
@@ -36,5 +37,13 @@ def fetch_data(state: AnalyticsState, config: AppConfig) -> dict:
                     logger.warning("Failed to fetch competitor %s: %s", cid, e)
         except Exception as e:
             logger.warning("Competitor fetch failed: %s", e)
+
+    if topic_context:
+        try:
+            yt_client = YouTubeClient()
+            topic_videos = yt_client.search_topic_videos(topic_context, max_results=15)
+            result["topic_videos"] = topic_videos
+        except Exception as e:
+            logger.warning("Topic video search failed: %s", e)
 
     return result

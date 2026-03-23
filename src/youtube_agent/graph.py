@@ -14,14 +14,16 @@ from youtube_agent.llm import create_llm
 from youtube_agent.state import OrchestratorState
 
 
-def _route_by_mode(state: OrchestratorState) -> Literal["ideation", "production", "analytics"]:
+def _route_by_mode(
+    state: OrchestratorState,
+) -> Literal["ideation", "production", "prepare_analytics"]:
     mode = state.get("mode", "full")
     if mode == "ideate":
         return "ideation"
     if mode == "produce":
         return "production"
     if mode == "analyze":
-        return "analytics"
+        return "prepare_analytics"
     return "ideation"
 
 
@@ -35,9 +37,9 @@ def _after_ideation(state: OrchestratorState) -> Literal["prepare_production", "
 
 def _after_production(
     state: OrchestratorState,
-) -> Literal["analytics", "__end__"]:
+) -> Literal["prepare_analytics", "__end__"]:
     if state.get("mode") == "full":
-        return "analytics"
+        return "prepare_analytics"
     return END
 
 
@@ -55,16 +57,29 @@ def create_orchestrator_graph(
     def _map_ideation_to_production(state: OrchestratorState) -> dict:
         return {"topic": state["selected_topic"]}
 
+    def _map_to_analytics(state: OrchestratorState) -> dict:
+        topic = state.get("selected_topic") or state.get("topic")
+        topic_context = ""
+        if topic:
+            topic_context = f"{topic['title']} — {topic.get('angle', '')}"
+        elif state.get("prompt"):
+            topic_context = state["prompt"]
+        return {"topic_context": topic_context}
+
     builder = StateGraph(OrchestratorState)
     builder.add_node("ideation", ideation, retry_policy=retry)
     builder.add_node("prepare_production", _map_ideation_to_production)
     builder.add_node("production", production, retry_policy=retry)
+    builder.add_node("prepare_analytics", _map_to_analytics)
     builder.add_node("analytics", analytics, retry_policy=retry)
 
-    builder.add_conditional_edges(START, _route_by_mode, ["ideation", "production", "analytics"])
+    builder.add_conditional_edges(
+        START, _route_by_mode, ["ideation", "production", "prepare_analytics"]
+    )
     builder.add_conditional_edges("ideation", _after_ideation, ["prepare_production", END])
     builder.add_edge("prepare_production", "production")
-    builder.add_conditional_edges("production", _after_production, ["analytics", END])
+    builder.add_conditional_edges("production", _after_production, ["prepare_analytics", END])
+    builder.add_edge("prepare_analytics", "analytics")
     builder.add_edge("analytics", END)
 
     return builder.compile(checkpointer=checkpointer)

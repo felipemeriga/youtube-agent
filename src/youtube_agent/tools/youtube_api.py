@@ -94,6 +94,43 @@ class YouTubeClient:
             )
         return items
 
+    def search_topic_videos(self, query: str, max_results: int = 15) -> list[VideoData]:
+        """Search YouTube for videos on a topic and return full stats."""
+        thirty_days_ago = (datetime.utcnow() - timedelta(days=30)).strftime("%Y-%m-%dT00:00:00Z")
+        search_response = (
+            self._service.search()
+            .list(
+                q=query,
+                part="id,snippet",
+                order="relevance",
+                maxResults=max_results,
+                type="video",
+                publishedAfter=thirty_days_ago,
+            )
+            .execute()
+        )
+        video_ids = [item["id"]["videoId"] for item in search_response.get("items", [])]
+        if not video_ids:
+            return []
+        stats_response = (
+            self._service.videos().list(id=",".join(video_ids), part="snippet,statistics").execute()
+        )
+        videos: list[VideoData] = []
+        for item in stats_response.get("items", []):
+            stats = item.get("statistics", {})
+            videos.append(
+                VideoData(
+                    video_id=item["id"],
+                    title=item["snippet"]["title"],
+                    views=int(stats.get("viewCount", 0)),
+                    likes=int(stats.get("likeCount", 0)),
+                    comments=int(stats.get("commentCount", 0)),
+                    published_at=item["snippet"]["publishedAt"],
+                    channel_id=item["snippet"].get("channelId", ""),
+                )
+            )
+        return sorted(videos, key=lambda v: v["views"], reverse=True)
+
     def get_competitor_videos(
         self, channel_ids: list[str], max_per_channel: int = 20, top_n: int = 10
     ) -> list[CompetitorVideo]:

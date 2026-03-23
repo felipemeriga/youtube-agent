@@ -103,8 +103,10 @@ class ProductionState(TypedDict):
 
 
 class AnalyticsState(TypedDict):
+    topic_context: str
     channel_videos: list[VideoData]
     competitor_videos: list[VideoData]
+    topic_videos: list[VideoData]
     analysis: AnalysisReport | None
     strategy: StrategyReport | None
 
