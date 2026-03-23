@@ -82,6 +82,7 @@ class IdeationState(TypedDict):
 
 class ProductionState(TypedDict):
     topic: TopicSuggestion
+    prompt: str
     research_findings: Annotated[list[ResearchFinding], operator.add]
     outline: VideoOutline | None
     script: VideoScript | None

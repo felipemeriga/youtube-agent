@@ -12,7 +12,7 @@ um canal brasileiro em português.
 
 Tópico: {title}
 Ângulo: {angle}
-
+{prompt_section}
 Estrutura aprovada:
 {outline}
 
@@ -116,9 +116,12 @@ def _write_script(state: ProductionState, llm: BaseChatModel) -> dict:
         f"- [{f.get('tool', 'web')}] {f['content'][:500]}\n  Fonte: {f.get('source', 'N/A')}"
         for f in state["research_findings"][:15]
     )
+    user_prompt = state.get("prompt") or ""
+    prompt_section = f'Intenção do criador: "{user_prompt}"\n' if user_prompt else ""
     prompt = WRITER_PROMPT.format(
         title=state["topic"]["title"],
         angle=state["topic"]["angle"],
+        prompt_section=prompt_section,
         outline=outline_text,
         research=research_text,
     )

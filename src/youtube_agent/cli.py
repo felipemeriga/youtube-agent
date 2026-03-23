@@ -142,39 +142,21 @@ def produce(ctx, topic):
     config = ctx.obj["config"]
     thread_id = str(uuid.uuid4())
 
-    if topic:
-        input_state = {
-            "mode": "produce",
-            "selected_topic": {
-                "title": topic,
-                "angle": "",
-                "timeliness": "",
-                "estimated_interest": "high",
-            },
-            "topic": {
-                "title": topic,
-                "angle": "",
-                "timeliness": "",
-                "estimated_interest": "high",
-            },
-        }
-    else:
-        topic_input = console.input("[bold yellow]? Qual o tópico do vídeo?[/bold yellow] ")
-        input_state = {
-            "mode": "produce",
-            "selected_topic": {
-                "title": topic_input,
-                "angle": "",
-                "timeliness": "",
-                "estimated_interest": "high",
-            },
-            "topic": {
-                "title": topic_input,
-                "angle": "",
-                "timeliness": "",
-                "estimated_interest": "high",
-            },
-        }
+    if not topic:
+        topic = console.input("[bold yellow]? Qual o tópico do vídeo?[/bold yellow] ")
+
+    topic_dict = {
+        "title": topic,
+        "angle": "",
+        "timeliness": "",
+        "estimated_interest": "high",
+    }
+    input_state = {
+        "mode": "produce",
+        "prompt": topic,
+        "selected_topic": topic_dict,
+        "topic": topic_dict,
+    }
 
     db_url = _get_db_url()
     with PostgresSaver.from_conn_string(db_url) as checkpointer:

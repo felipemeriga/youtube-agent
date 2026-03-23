@@ -49,7 +49,7 @@ def create_orchestrator_graph(
     ).compile()
 
     def _map_ideation_to_production(state: OrchestratorState) -> dict:
-        return {"topic": state["selected_topic"]}
+        return {"topic": state["selected_topic"], "prompt": state.get("prompt", "")}
 
     builder = StateGraph(OrchestratorState)
     builder.add_node("ideation", ideation, retry_policy=retry)

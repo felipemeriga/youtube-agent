@@ -14,7 +14,7 @@ um canal brasileiro em português que cobre temas variados.
 
 Tópico: {title}
 Ângulo: {angle}
-
+{prompt_section}
 Pesquisa realizada:
 {research}
 
@@ -35,9 +35,12 @@ def _generate_outline(state: ProductionState, llm: BaseChatModel) -> dict:
     research_text = "\n".join(
         f"[{f['tool']}] {f['content'][:500]}" for f in state["research_findings"][:10]
     )
+    user_prompt = state.get("prompt") or ""
+    prompt_section = f'Intenção do criador: "{user_prompt}"\n' if user_prompt else ""
     prompt = OUTLINER_PROMPT.format(
         title=state["topic"]["title"],
         angle=state["topic"]["angle"],
+        prompt_section=prompt_section,
         research=research_text,
     )
     response = llm.invoke([HumanMessage(content=prompt)])

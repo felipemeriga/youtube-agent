@@ -12,11 +12,15 @@ logger = logging.getLogger(__name__)
 
 async def _research_async(state: ProductionState) -> dict:
     topic = state["topic"]
+    user_prompt = state.get("prompt") or ""
     queries = [
         topic["title"],
-        f"{topic['title']} {topic['angle']}",
-        f"{topic['title']} tutorial guia",
+        f"{topic['title']} {topic['angle']}" if topic.get("angle") else topic["title"],
     ]
+    if user_prompt:
+        queries.append(user_prompt)
+    else:
+        queries.append(f"{topic['title']} análise dados estatísticas")
 
     all_findings = []
     for query in queries:
