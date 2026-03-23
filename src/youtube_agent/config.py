@@ -49,6 +49,7 @@ class OutputConfig:
 @dataclass
 class AppConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
+    models: dict[str, LLMConfig] = field(default_factory=dict)
     youtube: YouTubeConfig = field(default_factory=YouTubeConfig)
     reddit: RedditConfig = field(default_factory=RedditConfig)
     news: NewsConfig = field(default_factory=NewsConfig)
@@ -61,8 +62,10 @@ def load_config(config_path: str | None = None) -> AppConfig:
     if not path.exists():
         return AppConfig()
     raw = yaml.safe_load(path.read_text()) or {}
+    models = {role: LLMConfig(**cfg) for role, cfg in raw.get("models", {}).items()}
     return AppConfig(
         llm=LLMConfig(**raw.get("llm", {})),
+        models=models,
         youtube=YouTubeConfig(**raw.get("youtube", {})),
         reddit=RedditConfig(**raw.get("reddit", {})),
         news=NewsConfig(**raw.get("news", {})),

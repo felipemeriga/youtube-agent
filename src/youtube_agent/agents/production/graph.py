@@ -12,11 +12,16 @@ from youtube_agent.tools.tavily_search import create_tavily_tool
 from youtube_agent.utils import get_output_dir, save_json, save_text
 
 
-def create_production_graph(llm: BaseChatModel, output_dir: str = "./output") -> StateGraph:
+def create_production_graph(
+    outliner_llm: BaseChatModel,
+    writer_llm: BaseChatModel,
+    metadata_llm: BaseChatModel,
+    output_dir: str = "./output",
+) -> StateGraph:
     create_tavily_tool(max_results=5)
-    generate_outline, approve_outline = create_outliner_nodes(llm)
-    write_script, approve_script = create_writer_nodes(llm)
-    generate_metadata, approve_metadata = create_metadata_nodes(llm)
+    generate_outline, approve_outline = create_outliner_nodes(outliner_llm)
+    write_script, approve_script = create_writer_nodes(writer_llm)
+    generate_metadata, approve_metadata = create_metadata_nodes(metadata_llm)
 
     builder = StateGraph(ProductionState)
     builder.add_node("researcher", research_topic)

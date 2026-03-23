@@ -28,15 +28,25 @@ def _after_ideation(state: OrchestratorState) -> Literal["prepare_production", "
     return END
 
 
+def _resolve_llm(config: AppConfig, role: str) -> Any:
+    if role in config.models:
+        return create_llm(config.models[role])
+    return create_llm(config.llm)
+
+
 def create_orchestrator_graph(
     config: AppConfig,
     checkpointer: BaseCheckpointSaver | None = None,
 ) -> Any:
-    llm = create_llm(config.llm)
     retry = RetryPolicy(max_attempts=3, initial_interval=1.0)
 
-    ideation = create_ideation_graph(llm, config).compile()
-    production = create_production_graph(llm, output_dir=config.output.dir).compile()
+    ideation = create_ideation_graph(_resolve_llm(config, "topic_generator"), config).compile()
+    production = create_production_graph(
+        outliner_llm=_resolve_llm(config, "outliner"),
+        writer_llm=_resolve_llm(config, "writer"),
+        metadata_llm=_resolve_llm(config, "metadata_generator"),
+        output_dir=config.output.dir,
+    ).compile()
 
     def _map_ideation_to_production(state: OrchestratorState) -> dict:
         return {"topic": state["selected_topic"]}

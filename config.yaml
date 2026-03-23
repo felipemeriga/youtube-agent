@@ -3,6 +3,18 @@ llm:
   model: "gpt-4o-mini"
   temperature: 0.3
 
+# Per-node model overrides (falls back to llm above if not specified)
+# Available roles: topic_generator, outliner, writer, metadata_generator
+models:
+  writer:
+    provider: "anthropic"
+    model: "claude-sonnet-4-6"
+    temperature: 0.5
+  outliner:
+    provider: "anthropic"
+    model: "claude-sonnet-4-6"
+    temperature: 0.3
+
 youtube:
   channel_id: "UCTBd7NFpTqpBg-_EAm0Jg1w"
   competitor_channel_ids:
