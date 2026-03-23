@@ -12,6 +12,8 @@ OUTLINER_PROMPT = """\
 Você é um roteirista especialista em vídeos de YouTube para o canal "Além do Código", \
 um canal brasileiro em português que cobre temas variados.
 
+{persona_section}
+
 Tópico: {title}
 Ângulo: {angle}
 {prompt_section}
@@ -20,18 +22,18 @@ Pesquisa realizada:
 
 Crie uma estrutura detalhada para o vídeo com:
 1. sections: lista de seções, cada uma com "title", "description" e "duration" (em minutos)
-2. hooks: 2-3 opções de ganchos provocativos para a abertura do vídeo
+2. hooks: 2-3 opções de ganchos provocativos para a abertura do vídeo (no tom do apresentador)
 3. estimated_duration: duração total estimada do vídeo (ex: "14-16 min")
 
-A estrutura deve incluir: abertura com gancho forte, seções principais com dados concretos, \
-uma seção de análise/opinião, e fechamento com CTA.
+A estrutura deve incluir: abertura com gancho forte e provocativo, seções principais com dados \
+concretos, uma seção de opinião do apresentador (ele SEMPRE toma posição), e fechamento com CTA.
 
 Retorne APENAS um JSON object, sem outro texto.
 
 JSON response:"""
 
 
-def _generate_outline(state: ProductionState, llm: BaseChatModel) -> dict:
+def _generate_outline(state: ProductionState, llm: BaseChatModel, persona: str) -> dict:
     research_text = "\n".join(
         f"[{f['tool']}] {f['content'][:500]}" for f in state["research_findings"][:10]
     )
@@ -41,6 +43,7 @@ def _generate_outline(state: ProductionState, llm: BaseChatModel) -> dict:
         title=state["topic"]["title"],
         angle=state["topic"]["angle"],
         prompt_section=prompt_section,
+        persona_section=persona,
         research=research_text,
     )
     response = llm.invoke([HumanMessage(content=prompt)])
@@ -65,8 +68,8 @@ def _approve_outline(state: ProductionState) -> dict:
     return {}
 
 
-def create_outliner_nodes(llm: BaseChatModel):
+def create_outliner_nodes(llm: BaseChatModel, persona: str = ""):
     def generate(state: ProductionState) -> dict:
-        return _generate_outline(state, llm)
+        return _generate_outline(state, llm, persona)
 
     return generate, _approve_outline

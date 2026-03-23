@@ -16,11 +16,12 @@ def create_production_graph(
     outliner_llm: BaseChatModel,
     writer_llm: BaseChatModel,
     metadata_llm: BaseChatModel,
+    persona: str = "",
     output_dir: str = "./output",
 ) -> StateGraph:
     create_tavily_tool(max_results=5)
-    generate_outline, approve_outline = create_outliner_nodes(outliner_llm)
-    write_script, approve_script = create_writer_nodes(writer_llm)
+    generate_outline, approve_outline = create_outliner_nodes(outliner_llm, persona)
+    write_script, approve_script = create_writer_nodes(writer_llm, persona)
     generate_metadata, approve_metadata = create_metadata_nodes(metadata_llm)
 
     builder = StateGraph(ProductionState)

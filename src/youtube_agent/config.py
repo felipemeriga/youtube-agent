@@ -50,6 +50,7 @@ class OutputConfig:
 class AppConfig:
     llm: LLMConfig = field(default_factory=LLMConfig)
     models: dict[str, LLMConfig] = field(default_factory=dict)
+    persona: dict = field(default_factory=dict)
     youtube: YouTubeConfig = field(default_factory=YouTubeConfig)
     reddit: RedditConfig = field(default_factory=RedditConfig)
     news: NewsConfig = field(default_factory=NewsConfig)
@@ -63,11 +64,20 @@ def load_config(config_path: str | None = None) -> AppConfig:
         return AppConfig()
     raw = yaml.safe_load(path.read_text()) or {}
     models = {role: LLMConfig(**cfg) for role, cfg in raw.get("models", {}).items()}
+    persona = _load_persona(path.parent)
     return AppConfig(
         llm=LLMConfig(**raw.get("llm", {})),
         models=models,
+        persona=persona,
         youtube=YouTubeConfig(**raw.get("youtube", {})),
         reddit=RedditConfig(**raw.get("reddit", {})),
         news=NewsConfig(**raw.get("news", {})),
         output=OutputConfig(**raw.get("output", {})),
     )
+
+
+def _load_persona(config_dir: Path) -> dict:
+    persona_path = config_dir / "persona.yaml"
+    if not persona_path.exists():
+        return {}
+    return yaml.safe_load(persona_path.read_text()) or {}

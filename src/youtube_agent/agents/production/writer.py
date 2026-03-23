@@ -10,6 +10,8 @@ WRITER_PROMPT = """\
 Você é um roteirista profissional de vídeos de YouTube para o canal "Além do Código", \
 um canal brasileiro em português.
 
+{persona_section}
+
 Tópico: {title}
 Ângulo: {angle}
 {prompt_section}
@@ -96,18 +98,21 @@ mesmo que não seja especialista. Escreva de forma didática e direta.)
 ---
 
 REGRAS IMPORTANTES:
-- Todas as falas em português brasileiro, tom conversacional
+- Todas as falas em português brasileiro, tom conversacional e informal
+- O apresentador SEMPRE toma posição — nunca fica neutro ou em cima do muro
+- Use humor e provocações naturais, como um amigo falando a verdade
 - APENAS use dados e fontes que vieram da pesquisa fornecida acima
 - NÃO invente dados, estatísticas ou fontes
 - Inclua URLs reais das fontes quando disponíveis na pesquisa
 - Notas para o apresentador entre [colchetes]
 - Os talking points devem ser frases prontas, provocativas, que funcionam como sound bites
 - O timing deve ser realista e somar a duração total estimada
+- Respeite a persona do apresentador acima — tom, opiniões e o que evitar
 
 Escreva o roteiro completo:"""
 
 
-def _write_script(state: ProductionState, llm: BaseChatModel) -> dict:
+def _write_script(state: ProductionState, llm: BaseChatModel, persona: str) -> dict:
     outline_text = "\n".join(
         f"{i + 1}. {s.get('title', '')} ({s.get('duration', '')}): {s.get('description', '')}"
         for i, s in enumerate(state["outline"]["sections"])
@@ -122,6 +127,7 @@ def _write_script(state: ProductionState, llm: BaseChatModel) -> dict:
         title=state["topic"]["title"],
         angle=state["topic"]["angle"],
         prompt_section=prompt_section,
+        persona_section=persona,
         outline=outline_text,
         research=research_text,
     )
@@ -144,8 +150,8 @@ def _approve_script(state: ProductionState) -> dict:
     return {}
 
 
-def create_writer_nodes(llm: BaseChatModel):
+def create_writer_nodes(llm: BaseChatModel, persona: str = ""):
     def write(state: ProductionState) -> dict:
-        return _write_script(state, llm)
+        return _write_script(state, llm, persona)
 
     return write, _approve_script

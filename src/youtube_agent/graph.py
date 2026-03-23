@@ -10,6 +10,7 @@ from youtube_agent.agents.ideation.graph import create_ideation_graph
 from youtube_agent.agents.production.graph import create_production_graph
 from youtube_agent.config import AppConfig
 from youtube_agent.llm import create_llm
+from youtube_agent.persona import format_persona
 from youtube_agent.state import OrchestratorState
 
 
@@ -41,10 +42,12 @@ def create_orchestrator_graph(
     retry = RetryPolicy(max_attempts=3, initial_interval=1.0)
 
     ideation = create_ideation_graph(_resolve_llm(config, "topic_generator"), config).compile()
+    persona_text = format_persona(config.persona)
     production = create_production_graph(
         outliner_llm=_resolve_llm(config, "outliner"),
         writer_llm=_resolve_llm(config, "writer"),
         metadata_llm=_resolve_llm(config, "metadata_generator"),
+        persona=persona_text,
         output_dir=config.output.dir,
     ).compile()
 
